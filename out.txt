@@ -1,0 +1,3 @@
+6x6 Checkers
+1) Human vs Agent
+2) Agent vs Agent
