@@ -17,7 +17,7 @@ def ask_int(prompt: str, lo: int, hi: int, default: int) -> int:
         return max(lo, min(hi, v))
     except:
         return default
-
+#نمایش تمامی حرکات مجاز کاربر
 def human_choose(moves):
     print("حرکت‌های مجاز:")
     for i, mv in enumerate(moves):
@@ -25,6 +25,7 @@ def human_choose(moves):
     idx = ask_int("شماره حرکت را وارد کنید", 0, len(moves)-1, 0)
     return moves[idx]
 
+# انتخاب هایی که توسط کاربر مشخص میشوند.
 def main():
     print("6x6 Checkers")
     print("1) Human vs Agent")
@@ -33,7 +34,7 @@ def main():
 
     depth = ask_int("عمق جستجو", 3, 8, 3)
     eval_id = ask_int("تابع ارزیابی (1 یا 2)", 1, 2, 1)
-    use_ab = ask_int("استفاده از Alpha-Beta؟ (1=Yes,2=No)", 1, 2, 1) == 1
+    use_ab = ask_int("Use Alpha-Beta? (1=Yes,2=No)", 1, 2, 1) == 1
 
     eval_fn = pick_eval(eval_id)
 
@@ -43,12 +44,12 @@ def main():
     human_player = 2 if mode == 1 else 0
 
     while True:
-        print("\n------------------------------")
+        print("\n-------------------------------")
         print(f"نوبت: {'Black' if state.turn == 1 else 'White'}")
         print_board(state.board)
 
         term = terminal_status(state.board, state.turn)
-        if term is not None:
+        if term is not None: #نمایش نتایج
             if term == 1:
                 print("نتیجه: برد سیاه (Black wins)")
             elif term == -1:
