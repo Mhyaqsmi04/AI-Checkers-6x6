@@ -6,3 +6,8 @@ venv/
 .vscode/
 .qodo/
 .DS_Store
+__pycache__/
+*.pyc
+out.txt
+output*.txt
+*.log
