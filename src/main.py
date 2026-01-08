@@ -19,10 +19,10 @@ def ask_int(prompt: str, lo: int, hi: int, default: int) -> int:
         return default
 #نمایش تمامی حرکات مجاز کاربر
 def human_choose(moves):
-    print("حرکت‌های مجاز:")
+    print("Harkat haye mojaz:")
     for i, mv in enumerate(moves):
         print(f"{i}: {mv}")
-    idx = ask_int("شماره حرکت را وارد کنید", 0, len(moves)-1, 0)
+    idx = ask_int("Shomare harkat ra vared konid: \n", 0, len(moves)-1, 0)
     return moves[idx]
 
 # انتخاب هایی که توسط کاربر مشخص میشوند.
@@ -30,10 +30,10 @@ def main():
     print("6x6 Checkers")
     print("1) Human vs Agent")
     print("2) Agent vs Agent")
-    mode = ask_int("انتخاب", 1, 2, 1)
+    mode = ask_int("Choose:", 1, 2, 1)
 
-    depth = ask_int("عمق جستجو", 3, 8, 3)
-    eval_id = ask_int("تابع ارزیابی (1 یا 2)", 1, 2, 1)
+    depth = ask_int("depth search: ", 3, 8, 3)
+    eval_id = ask_int("Evaluation function (1 or 2)", 1, 2, 1)
     use_ab = ask_int("Use Alpha-Beta? (1=Yes,2=No)", 1, 2, 1) == 1
 
     eval_fn = pick_eval(eval_id)
@@ -45,17 +45,17 @@ def main():
 
     while True:
         print("\n-------------------------------")
-        print(f"نوبت: {'Black' if state.turn == 1 else 'White'}")
+        print(f"turn: {'Black' if state.turn == 1 else 'White'}")
         print_board(state.board)
 
         term = terminal_status(state.board, state.turn)
         if term is not None: #نمایش نتایج
             if term == 1:
-                print("نتیجه: برد سیاه (Black wins)")
+                print("Black wins!")
             elif term == -1:
-                print("نتیجه: برد سفید (White wins)")
+                print("White wins!")
             else:
-                print("نتیجه: مساوی (Draw)")
+                print("Draw!")
             break
 
         moves = generate_legal_moves(state.board, state.turn)
