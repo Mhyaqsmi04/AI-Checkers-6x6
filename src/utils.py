@@ -15,6 +15,16 @@ W_KING = 4
 
 Player = int  # 1 for Black, 2 for White
 
+
+def board_key(board: List[List[int]]) -> Tuple[int, ...]:
+    """Immutable key for a board position (useful for repetition/learning)."""
+    return tuple(cell for row in board for cell in row)
+
+
+def position_key(board: List[List[int]], turn: Player) -> Tuple[int, ...]:
+    """Position key including side-to-move."""
+    return board_key(board) + (turn,)
+
 def opponent(player: Player) -> Player:
     return 2 if player == 1 else 1
 

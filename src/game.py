@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict
 
 from utils import (
@@ -7,7 +7,8 @@ from utils import (
     B_MAN, W_MAN, B_KING, W_KING,
     Player, Move,
     opponent, playable_cell, in_bounds, clone_board,
-    piece_owner, is_king, is_black, is_white, promote_if_needed
+    piece_owner, is_king, is_black, is_white, promote_if_needed,
+    position_key,
 )
 
 # Directions:
@@ -22,6 +23,22 @@ KING_DIRS = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
 class GameState:
     board: List[List[int]]
     turn: Player  # 1 black, 2 white
+
+    # --- draw helpers (optional in spec, implemented to prevent infinite loops) ---
+    # counts plies since a capture or promotion (a "progress" event)
+    ply_since_progress: int = 0
+    # repetition count for (board, side_to_move)
+    repetition: Dict[Tuple[int, ...], int] = field(default_factory=dict)
+    ply_count: int = 0
+
+
+def initial_state() -> GameState:
+    """Initial game state with repetition table seeded."""
+    b = initial_board()
+    s = GameState(board=b, turn=1)
+    k = position_key(b, s.turn)
+    s.repetition[k] = 1
+    return s
 
 def initial_board() -> List[List[int]]:
     board = [[EMPTY for _ in range(BOARD_SIZE)] for _ in range(BOARD_SIZE)]
@@ -182,7 +199,7 @@ def apply_move(state: GameState, move: Move) -> GameState:
     """
     board = clone_board(state.board)
     (sr, sc) = move.path[0]
-    piece = board[sr][sc]
+    piece_before = board[sr][sc]
     board[sr][sc] = EMPTY
 
     # remove captured pieces
@@ -191,10 +208,26 @@ def apply_move(state: GameState, move: Move) -> GameState:
 
     # land on final square
     (er, ec) = move.path[-1]
-    piece = promote_if_needed(piece, er)
-    board[er][ec] = piece
+    piece_after = promote_if_needed(piece_before, er)
+    board[er][ec] = piece_after
 
-    return GameState(board=board, turn=opponent(state.turn))
+    next_turn = opponent(state.turn)
+
+    # --- update draw bookkeeping ---
+    progress = move.is_capture or (piece_after != piece_before)
+    ply_since_progress = 0 if progress else (state.ply_since_progress + 1)
+
+    repetition = dict(state.repetition)
+    key = position_key(board, next_turn)
+    repetition[key] = repetition.get(key, 0) + 1
+
+    return GameState(
+        board=board,
+        turn=next_turn,
+        ply_since_progress=ply_since_progress,
+        repetition=repetition,
+        ply_count=state.ply_count + 1,
+    )
 
 def count_pieces(board: List[List[int]]) -> Dict[str, int]:
     res = {"b_man":0, "b_king":0, "w_man":0, "w_king":0}
@@ -207,7 +240,7 @@ def count_pieces(board: List[List[int]]) -> Dict[str, int]:
             elif p == W_KING: res["w_king"] += 1
     return res
 
-def terminal_status(board: List[List[int]], player_to_move: Player) -> Optional[int]:
+def terminal_status(state: GameState, repetition_limit: int = 3, no_progress_plies: int = 80) -> Optional[int]:
     """
     Returns:
       None -> not terminal
@@ -218,6 +251,19 @@ def terminal_status(board: List[List[int]], player_to_move: Player) -> Optional[
       - a player has no pieces
       - a player has no legal moves
     """
+    board = state.board
+    player_to_move = state.turn
+
+    # draw by repetition
+    if repetition_limit > 0:
+        k = position_key(board, player_to_move)
+        if state.repetition.get(k, 0) >= repetition_limit:
+            return 0
+
+    # draw by no progress
+    if no_progress_plies > 0 and state.ply_since_progress >= no_progress_plies:
+        return 0
+
     counts = count_pieces(board)
     black_total = counts["b_man"] + counts["b_king"]
     white_total = counts["w_man"] + counts["w_king"]
